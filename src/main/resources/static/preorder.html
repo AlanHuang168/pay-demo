@@ -1,0 +1,147 @@
+<!--
+ * @Author: luo
+ * @Date: 2021-07-07 15:12:01
+ * @LastEditTime: 2021-07-07 18:14:37
+ * @LastEditors: luo
+ * @Description: Edit
+ * @FilePath: \code\模板\preorder.html
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            margin: 10px 0 10px 110px;
+        }
+
+        .form-item {
+            padding: 12px 0;
+        }
+
+        span {
+            font-size: 12px;
+            margin-right: 4px;
+            display: inline-block;
+            width: 100px;
+            text-align: right;
+        }
+
+        input {
+            padding: 6px;
+        }
+
+        button {
+            border: none;
+            background: #000;
+            color: #fff;
+            padding: 6px 20px;
+            margin-left: 110px;
+        }
+
+        #qrcode {
+            padding: 50px 0 0 110px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h1 v-if="success">支付成功</h1>
+        <div class="form-item">
+            <span>付款方商户编号:</span>
+            <input type="text" v-model="data.merchId" />
+        </div>
+        <div class="form-item">
+            <span>支付金额(元):</span>
+            <input type="text" v-model="data.money" />
+        </div>
+        <div class="form-item">
+            <span>支付描述:</span>
+            <input type="text" v-model="data.body" />
+        </div>
+        <button @click="pay">提交</button>
+    </div>
+
+    <!-- 二维码 -->
+    <div id="qrcode"></div>
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="https://static.runoob.com/assets/qrcode/qrcode.min.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                merchTradeId: null,
+                code: null,
+                data: {
+                    merchId: "9229446986719978",
+                    money: "0.01",
+                    body: ""
+                },
+                timer: null,
+                success: false
+            }
+        },
+        methods: {
+            result() {
+                let _this = this
+                axios.post('http://sgj.proxy.jingxiantech.com/pay/payResult', { merchTradeId: _this.merchTradeId })
+                    .then(function (response) {
+                        console.log(':', response.data)
+                        if (response.data == 0) {
+                            clearInterval(_this.timer)
+                            _this.success = true
+                        }
+                    })
+                    .catch(function (error) {
+                        clearInterval(_this.timer)
+                        alert(error)
+                    })
+            },
+            pay() {
+                let _this = this
+                _this.success = false
+                axios.post('http://sgj.proxy.jingxiantech.com/pay/preOrder', _this.data)
+                    .then(function (response) {
+                        let { code, msg } = response.data
+                        if (code == 0) {
+                            let { pay_url, merchTradeId } = response.data.data
+                            if (_this.code) {
+                                _this.code.clear()
+                                _this.code.makeCode(pay_url)
+                            } else {
+                                _this.code = new QRCode(document.getElementById("qrcode"), pay_url)
+                            }
+                            _this.merchTradeId = merchTradeId
+
+                            _this.timer = setInterval(() => {
+                                _this.result()
+                            }, 1000)
+                        } else {
+                            alert(msg)
+                        }
+                    })
+                    .catch(function (error) {
+                        console.log(error)
+                        alert(error)
+                    })
+            }
+        }
+    })
+</script>
+
+</html>
