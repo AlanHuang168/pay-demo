@@ -1,9 +1,12 @@
 package com.puer.pay.util;
 
+import com.alibaba.fastjson.JSON;
+import com.puer.pay.vo.RoyaltiesVo;
 import org.springframework.util.DigestUtils;
 
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Random;
 import java.util.UUID;
@@ -34,15 +37,45 @@ public class StringUtils {
         return DigestUtils.md5DigestAsHex(UUID.randomUUID().toString().getBytes());
     }
 
-    public static String nonceStr(int len){
-        String str = "";
+    public static String nonceStr(int len) {
+        StringBuilder str = new StringBuilder();
         String strPol = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz";
         int max = strPol.length();
         Random random = new Random();
-        for(int i=0; i < len; i++){
-            str += strPol.charAt(random.nextInt(max));
+        for (int i = 0; i < len; i++) {
+            str.append(strPol.charAt(random.nextInt(max)));
         }
-        return str;
+        return str.toString();
     }
 
+    public static String[] transToArr(String data) {
+        return getJsonList(data);
+    }
+
+    public static RoyaltiesVo[] transToRoyaltiesArr(String data) {
+        String[] fields = getJsonList(data);
+        RoyaltiesVo[] royaltiesArr = new RoyaltiesVo[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            royaltiesArr[i] = JSON.parseObject(fields[i], RoyaltiesVo.class);
+        }
+        return royaltiesArr;
+    }
+
+    private static String[] getJsonList(String data) {
+        String[] fields = data.replaceAll("\\[", "")
+                .replaceAll("]", "")
+                .replaceAll(" {3}", "")
+                .replaceAll(" {2}", "")
+                .replaceAll(" ", "")
+                .replaceAll("=", ":")
+                .split("},");
+        if (fields.length > 1) {
+            for (int i = 0; i < fields.length; i++) {
+                if (i < fields.length - 1) {
+                    fields[i] = fields[i] + "}";
+                }
+            }
+        }
+        return fields;
+    }
 }
